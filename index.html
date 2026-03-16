@@ -1,118 +1,1832 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live F1 Leaderboard</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #e10600; /* F1 brand color */
-            text-align: center;
-        }
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .leaderboard-table th, .leaderboard-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .leaderboard-table th {
-            background-color: #e10600;
-            color: white;
-        }
-        .leaderboard-table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .leaderboard-table tr:hover {
-            background-color: #f1f1f1;
-        }
-        .driver-pos {
-            font-weight: bold;
-            width: 50px;
-        }
-        .driver-name {
-            font-weight: bold;
-        }
-        .driver-team {
-            color: #666;
-            font-size: 0.9em;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F1 LIVE — Grand Prix Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070707;
+  --card: #0f0f0f;
+  --card2: #141414;
+  --border: #222222;
+  --border2: #1a1a1a;
+  --red: #E10600;
+  --red2: #ff1a1a;
+  --white: #FFFFFF;
+  --gray: #777777;
+  --gray2: #444444;
+  --text: #DCDCDC;
+  --gold: #FFD700;
+  --silver: #C0C0C0;
+  --bronze: #CD7F32;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── TOPNAV ─────────────────────────────────────── */
+.topnav {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: #080808;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: var(--red);
+  user-select: none;
+}
+.logo em { color: var(--white); font-style: normal; }
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.session-pill {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.live-badge.offline { color: var(--gray2); }
+.live-dot {
+  width: 7px; height: 7px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: blink 1.4s ease-in-out infinite;
+}
+.live-badge.offline .live-dot { background: var(--gray2); animation: none; }
+@keyframes blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--red); }
+  50% { opacity: 0.3; box-shadow: none; }
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.nav-date { font-size: 12px; color: var(--gray); letter-spacing: 1px; }
+
+/* ── MAIN GRID ───────────────────────────────────── */
+.main {
+  display: grid;
+  grid-template-columns: 270px 1fr 300px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sidebar {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #090909;
+}
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.s-tab {
+  flex: 1;
+  padding: 11px 6px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--gray);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.s-tab.active { color: var(--white); border-bottom-color: var(--red); }
+.s-tab:hover:not(.active) { color: var(--text); }
+
+/* Driver detail strip */
+.driver-detail-strip {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+  display: none;
+  background: linear-gradient(135deg, #0f0f0f 0%, #141414 100%);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.driver-detail-strip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--driver-color, var(--red));
+}
+.driver-detail-strip.visible { display: block; }
+.dds-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.dds-meta { font-size: 12px; color: var(--gray); letter-spacing: 0.5px; margin-bottom: 10px; }
+.dds-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.dds-stat {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border2);
+  padding: 6px 8px;
+  text-align: center;
+}
+.dds-stat-label { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); margin-bottom: 2px; }
+.dds-stat-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+}
+.dds-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: none; border: none;
+  color: var(--gray2); font-size: 16px; cursor: pointer;
+  transition: color 0.15s;
+}
+.dds-close:hover { color: var(--red); }
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray2) transparent;
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Teams panel */
+.team-block { border-bottom: 1px solid var(--border2); }
+.team-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+  user-select: none;
+}
+.team-hdr:hover { background: rgba(255,255,255,0.025); }
+.team-stripe {
+  width: 3px;
+  height: 26px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.team-hdr-info { flex: 1; min-width: 0; }
+.team-hdr-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.team-hdr-pos { font-size: 10px; color: var(--gray); margin-top: 2px; }
+.team-hdr-pts {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray);
+}
+.team-expand-icon {
+  font-size: 10px;
+  color: var(--gray2);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.team-block.open .team-expand-icon { transform: rotate(180deg); }
+.team-drivers-list { display: none; }
+.team-block.open .team-drivers-list { display: block; }
+.driver-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 28px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.driver-item:hover { background: rgba(255,255,255,0.03); }
+.driver-item.active { background: rgba(225,6,0,0.07); }
+.di-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  width: 20px;
+  flex-shrink: 0;
+}
+.di-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.di-pts { font-size: 11px; color: var(--gray); font-weight: 600; }
+
+/* Standings panel */
+.standings-section { padding: 14px 14px 0; }
+.section-label {
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gray);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border2);
+}
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #161616;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-radius: 2px;
+  padding: 5px 4px;
+}
+.st-row:hover { background: rgba(255,255,255,0.03); }
+.st-pos {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray2);
+  width: 16px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.st-bar { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; }
+.st-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-pts { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--white); flex-shrink: 0; }
+
+/* Schedule panel */
+.schedule-list { padding: 14px; }
+.schedule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #161616;
+}
+.sch-round {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  width: 22px;
+  color: var(--gray2);
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+.sch-info { flex: 1; min-width: 0; }
+.sch-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sch-loc { font-size: 10px; color: var(--gray); margin-top: 1px; }
+.sch-date { font-size: 10px; color: var(--gray); flex-shrink: 0; padding-top: 2px; }
+.sch-next-tag {
+  font-size: 8px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--red);
+  background: rgba(225,6,0,0.1);
+  border: 1px solid rgba(225,6,0,0.25);
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+.schedule-item.past { opacity: 0.38; }
+.schedule-item.next .sch-name { color: var(--white); }
+
+/* ── TRACK CENTER ────────────────────────────────── */
+.track-center {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #070707;
+  position: relative;
+}
+.track-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.track-title-group { display: flex; flex-direction: column; }
+.track-circuit-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1.2;
+}
+.track-country { font-size: 11px; color: var(--gray); letter-spacing: 1px; }
+.track-controls { display: flex; align-items: center; gap: 8px; }
+.circuit-select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  outline: none;
+  letter-spacing: 0.5px;
+  max-width: 200px;
+}
+.circuit-select:hover { border-color: var(--gray2); }
+.track-stats-bar {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.ts-item { text-align: center; }
+.ts-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1;
+}
+.ts-lbl { font-size: 8px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+
+.track-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+#track-svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+}
+
+/* Track overlays */
+.track-bottom-row {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.map-chip {
+  background: rgba(7,7,7,0.88);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--gray);
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+.map-chip strong { color: var(--white); font-weight: 700; }
+.map-chip.alert { color: var(--red); border-color: rgba(225,6,0,0.3); }
+
+/* ── LEADERBOARD ─────────────────────────────────── */
+.lb-panel {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #080808;
+}
+
+/* Countdown */
+.countdown-block {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #0c0c0c 0%, #090909 100%);
+}
+.cd-label { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); margin-bottom: 5px; }
+.cd-race-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cd-units {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.cd-unit { text-align: center; min-width: 38px; }
+.cd-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--red);
+  line-height: 1;
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+.cd-lbl { font-size: 8px; color: var(--gray); letter-spacing: 1.5px; text-transform: uppercase; }
+.cd-colon {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--gray2);
+  line-height: 1.1;
+  padding-top: 1px;
+}
+
+/* LB Header */
+.lb-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.lb-hdr-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--white);
+}
+.lb-toggles { display: flex; gap: 3px; }
+.lb-tog {
+  padding: 4px 9px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--gray);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.lb-tog.on { background: var(--red); border-color: var(--red); color: #fff; }
+.lb-tog:hover:not(.on) { border-color: var(--gray); color: var(--text); }
+
+/* LB List */
+.lb-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray2) transparent;
+  min-height: 0;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 30px 26px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #141414;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+.lb-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+}
+.lb-row:nth-child(1)::before { background: var(--gold); }
+.lb-row:nth-child(2)::before { background: var(--silver); }
+.lb-row:nth-child(3)::before { background: var(--bronze); }
+.lb-row:hover { background: rgba(255,255,255,0.025); }
+.lb-row.highlighted { background: rgba(225,6,0,0.07) !important; }
+
+.lb-pos {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray);
+  text-align: center;
+}
+.lb-pos.gold { color: var(--gold); }
+.lb-pos.silver { color: var(--silver); }
+.lb-pos.bronze { color: var(--bronze); }
+
+.lb-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+}
+.lb-info { min-width: 0; }
+.lb-driver {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.2;
+}
+.lb-team-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.lb-team { font-size: 10px; color: var(--gray); letter-spacing: 0.3px; }
+.lb-time-col { text-align: right; min-width: 0; }
+.lb-gap {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.lb-gap.leader { color: var(--red); }
+.lb-sub { font-size: 10px; color: var(--gray2); }
+
+/* Championship chips */
+.champ-footer {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+.cf-label { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); margin-bottom: 7px; }
+.cf-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cf-scroll::-webkit-scrollbar { display: none; }
+.cf-chip {
+  flex-shrink: 0;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  padding: 5px 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cf-chip:hover { border-color: var(--gray2); }
+.cf-p {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--gray2);
+  min-width: 14px;
+}
+.cf-name { font-size: 11px; font-weight: 700; color: var(--text); letter-spacing: 0.5px; }
+.cf-pts {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+/* ── STATUS BAR ──────────────────────────────────── */
+.statusbar {
+  height: 26px;
+  border-top: 1px solid var(--border);
+  background: #060606;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.sb-item {
+  font-size: 10px;
+  color: var(--gray);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.sb-item strong { color: var(--text); font-weight: 600; }
+.sb-sep { width: 1px; height: 12px; background: var(--border); flex-shrink: 0; }
+.sb-right { margin-left: auto; }
+
+/* ── LOADING / SPINNERS ──────────────────────────── */
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px;
+  color: var(--gray);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.spin {
+  width: 28px; height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SCROLLBAR ───────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray2); border-radius: 2px; }
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media (max-width: 1080px) {
+  .main { grid-template-columns: 240px 1fr 270px; }
+}
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>F1 Leaderboard</h1>
-        <table class="leaderboard-table">
-            <thead>
-                <tr>
-                    <th>Pos</th>
-                    <th>Driver</th>
-                    <th>Team</th>
-                    <th>Nationality</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body">
-                <!-- Data will be inserted here by JavaScript -->
-            </tbody>
-        </table>
+<!-- ══════════════ TOP NAV ══════════════ -->
+<nav class="topnav">
+  <div class="logo">F1<em>LIVE</em></div>
+  <div class="nav-center">
+    <div class="session-pill" id="session-pill">CONNECTING…</div>
+    <div class="live-badge offline" id="live-badge">
+      <div class="live-dot"></div>
+      <span id="live-txt">OFFLINE</span>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-date" id="nav-date"></div>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-tabs">
+      <button class="s-tab active" onclick="showTab('teams')">Teams</button>
+      <button class="s-tab" onclick="showTab('drivers')">Drivers</button>
+      <button class="s-tab" onclick="showTab('schedule')">Schedule</button>
     </div>
 
-    <script>
-        // Use the Ergast API for a simple demonstration
-        const API_URL = 'http://ergast.com';
+    <!-- Driver detail strip -->
+    <div class="driver-detail-strip" id="driver-strip">
+      <button class="dds-close" onclick="closeDriverStrip()">✕</button>
+      <div class="dds-name" id="dds-name">—</div>
+      <div class="dds-meta" id="dds-meta">—</div>
+      <div class="dds-grid" id="dds-grid"></div>
+    </div>
 
-        async function fetchF1Data() {
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                displayLeaderboard(data);
-            } catch (error) {
-                console.error('Error fetching F1 data:', error);
-                document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="4">Failed to load data. Please check console for errors.</td></tr>';
-            }
+    <div class="sidebar-scroll">
+      <!-- TEAMS -->
+      <div class="tab-panel active" id="panel-teams">
+        <div id="teams-list"><div class="loader"><div class="spin"></div>LOADING</div></div>
+        <div style="padding:0 0 14px;">
+          <div class="standings-section">
+            <div class="section-label">Constructors' Championship</div>
+            <div id="constructor-standings"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRIVERS -->
+      <div class="tab-panel" id="panel-drivers">
+        <div class="standings-section">
+          <div class="section-label">Drivers' Championship</div>
+          <div id="driver-standings"></div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="tab-panel" id="panel-schedule">
+        <div class="schedule-list" id="schedule-list">
+          <div class="loader"><div class="spin"></div>LOADING</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- TRACK MAP -->
+  <section class="track-center">
+    <div class="track-toolbar">
+      <div class="track-title-group">
+        <div class="track-circuit-name" id="circuit-label">Albert Park Circuit</div>
+        <div class="track-country" id="circuit-country">🇦🇺 Australia · Melbourne</div>
+      </div>
+      <div class="track-controls">
+        <select class="circuit-select" id="circuit-select" onchange="switchCircuit(this.value)">
+          <option value="australia" selected>🇦🇺 Australia — Melbourne</option>
+          <option value="bahrain">🇧🇭 Bahrain — Sakhir</option>
+          <option value="jeddah">🇸🇦 Saudi Arabia — Jeddah</option>
+          <option value="japan">🇯🇵 Japan — Suzuka</option>
+          <option value="china">🇨🇳 China — Shanghai</option>
+          <option value="miami">🇺🇸 Miami</option>
+          <option value="monaco">🇲🇨 Monaco</option>
+          <option value="silverstone">🇬🇧 Britain — Silverstone</option>
+          <option value="monza">🇮🇹 Italy — Monza</option>
+          <option value="singapore">🇸🇬 Singapore</option>
+          <option value="lasvegas">🇺🇸 Las Vegas</option>
+          <option value="abudhabi">🇦🇪 Abu Dhabi</option>
+        </select>
+      </div>
+      <div class="track-stats-bar">
+        <div class="ts-item">
+          <div class="ts-val" id="ts-laps">—</div>
+          <div class="ts-lbl">Laps</div>
+        </div>
+        <div class="ts-item">
+          <div class="ts-val" id="ts-len">—</div>
+          <div class="ts-lbl">km</div>
+        </div>
+        <div class="ts-item">
+          <div class="ts-val" id="ts-total">—</div>
+          <div class="ts-lbl">Total km</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="track-canvas">
+      <svg id="track-svg" viewBox="0 0 500 360" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div class="track-bottom-row">
+      <div style="display:flex;gap:8px;">
+        <div class="map-chip"><strong id="map-circuit">Albert Park</strong></div>
+        <div class="map-chip">Lap <strong id="map-lap">—</strong></div>
+      </div>
+      <div class="map-chip alert" id="map-flag" style="display:none">🟡 SAFETY CAR</div>
+      <div class="map-chip">DRS <strong id="map-drs">—</strong></div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="lb-panel">
+
+    <!-- Countdown -->
+    <div class="countdown-block" id="cd-block">
+      <div class="cd-label">Next Race</div>
+      <div class="cd-race-name" id="cd-race">Loading…</div>
+      <div class="cd-units">
+        <div class="cd-unit">
+          <span class="cd-val" id="cd-d">--</span>
+          <div class="cd-lbl">days</div>
+        </div>
+        <div class="cd-colon">:</div>
+        <div class="cd-unit">
+          <span class="cd-val" id="cd-h">--</span>
+          <div class="cd-lbl">hrs</div>
+        </div>
+        <div class="cd-colon">:</div>
+        <div class="cd-unit">
+          <span class="cd-val" id="cd-m">--</span>
+          <div class="cd-lbl">min</div>
+        </div>
+        <div class="cd-colon">:</div>
+        <div class="cd-unit">
+          <span class="cd-val" id="cd-s">--</span>
+          <div class="cd-lbl">sec</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lb-hdr">
+      <div class="lb-hdr-title">Leaderboard</div>
+      <div class="lb-toggles">
+        <button class="lb-tog on" id="tog-standings" onclick="setLbMode('standings')">Season</button>
+        <button class="lb-tog" id="tog-race" onclick="setLbMode('race')">Race</button>
+      </div>
+    </div>
+
+    <div class="lb-scroll" id="lb-list">
+      <div class="loader"><div class="spin"></div>LOADING</div>
+    </div>
+
+    <div class="champ-footer">
+      <div class="cf-label">Driver Championship</div>
+      <div class="cf-scroll" id="champ-chips"></div>
+    </div>
+  </section>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="sb-item">Season <strong id="sb-season">—</strong></div>
+  <div class="sb-sep"></div>
+  <div class="sb-item">Round <strong id="sb-round">—</strong></div>
+  <div class="sb-sep"></div>
+  <div class="sb-item" id="sb-session-type">—</div>
+  <div class="sb-sep"></div>
+  <div class="sb-item sb-right">Data: OpenF1 · Jolpica Ergast · Updated <strong id="sb-time">—</strong></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CIRCUIT DATABASE
+// ═══════════════════════════════════════════════════
+const CIRCUITS = {
+  australia: {
+    name: 'Albert Park Circuit', country: '🇦🇺 Australia · Melbourne', mapLabel: 'Albert Park',
+    laps: 58, length: 5.278, lapRecord: '1:20.235 — LEC 2022',
+    // Follows lake loop: smooth circuit, mostly right-angle corners
+    path: `M 108,230 C 90,230 78,218 78,200 L 78,162 C 78,148 88,138 102,138
+           L 112,136 C 124,134 130,124 128,112 L 124,96 C 120,80 128,66 145,63
+           L 200,58 C 240,55 285,58 315,72 C 342,84 355,108 348,135
+           L 340,158 C 334,178 342,195 358,200 L 375,205 C 392,210 400,225 395,242
+           L 388,260 C 382,278 368,288 350,285 L 318,278
+           C 300,274 282,282 278,300 L 275,315 C 272,328 260,336 248,332
+           L 195,330 C 165,330 135,328 120,320 C 110,314 108,300 112,288
+           L 118,270 C 124,252 116,236 108,230 Z`,
+    startPoint: [108, 230]
+  },
+  bahrain: {
+    name: 'Bahrain International Circuit', country: '🇧🇭 Bahrain · Sakhir', mapLabel: 'Sakhir',
+    laps: 57, length: 5.412, lapRecord: '1:31.447 — PER 2021',
+    path: `M 115,65 L 270,65 C 305,65 322,82 322,102 L 320,122 C 318,138 306,148 290,148
+           L 268,148 C 252,148 242,160 242,175 L 242,195 C 242,210 252,220 268,222
+           L 295,224 C 315,226 328,240 325,260 L 320,278
+           C 316,295 300,305 282,302 L 260,298 C 242,295 228,308 226,325
+           L 225,340 C 222,352 210,360 196,355 L 165,345
+           C 145,338 130,322 130,302 L 130,282 C 130,262 118,248 98,245
+           L 78,243 C 58,241 45,225 48,205 L 52,182
+           C 56,158 72,145 90,148 L 108,150 C 122,152 132,140 130,126
+           L 126,105 C 122,84 132,65 115,65 Z`,
+    startPoint: [115, 65]
+  },
+  jeddah: {
+    name: 'Jeddah Corniche Circuit', country: '🇸🇦 Saudi Arabia · Jeddah', mapLabel: 'Jeddah',
+    laps: 50, length: 6.174, lapRecord: '1:30.734 — LEC 2022',
+    path: `M 75,65 L 360,62 C 392,62 408,80 408,108 L 405,145
+           C 403,162 392,172 378,172 L 355,172 C 342,172 332,182 332,195
+           L 332,215 C 332,228 342,238 355,240 L 380,242
+           C 396,244 408,258 405,275 L 398,292
+           C 392,308 376,318 358,312 L 330,302
+           C 312,295 294,305 290,322 L 288,340 C 285,352 272,358 258,352
+           L 195,338 C 162,330 130,315 110,295 L 88,270
+           C 68,248 58,218 62,188 L 66,158 C 70,132 85,115 80,95 L 75,65 Z`,
+    startPoint: [75, 65]
+  },
+  japan: {
+    name: 'Suzuka Circuit', country: '🇯🇵 Japan · Suzuka', mapLabel: 'Suzuka',
+    laps: 53, length: 5.807, lapRecord: '1:30.983 — LEC 2024',
+    // Figure-8 shape
+    path: `M 118,78 L 215,70 C 258,67 292,84 308,112 C 322,138 315,168 295,182
+           L 272,194 C 258,202 256,218 265,232 L 278,248
+           C 292,265 288,288 270,298 L 248,305
+           C 228,312 208,304 198,288 L 188,270
+           C 180,252 164,248 148,255 L 128,265
+           C 108,275 88,265 80,245 L 75,222
+           C 70,200 80,178 98,168 L 118,160
+           C 135,152 140,136 132,120 L 124,102
+           C 116,82 118,78 118,78 Z
+           M 232,172 C 248,165 262,175 265,192 L 266,208
+           C 265,222 254,230 240,228 L 225,222
+           C 212,215 210,200 218,188 Z`,
+    startPoint: [118, 78]
+  },
+  china: {
+    name: 'Shanghai International Circuit', country: '🇨🇳 China · Shanghai', mapLabel: 'Shanghai',
+    laps: 56, length: 5.451, lapRecord: '1:32.238 — MIC 2004',
+    path: `M 95,82 L 295,78 C 340,77 368,102 368,142 L 365,175
+           C 362,200 345,215 322,215 L 298,215
+           C 272,215 255,232 255,255 L 255,280
+           C 255,302 272,318 295,318 L 355,320
+           C 385,321 405,342 402,368 L 355,372
+           L 132,375 C 100,375 75,352 75,320 L 75,295
+           C 75,268 92,248 118,245 L 138,243
+           C 158,241 170,225 168,205 L 165,182
+           C 162,158 145,145 122,148 L 98,152
+           C 72,156 58,135 65,108 C 70,88 82,82 95,82 Z`,
+    startPoint: [95, 82]
+  },
+  miami: {
+    name: 'Miami International Autodrome', country: '🇺🇸 USA · Miami', mapLabel: 'Miami',
+    laps: 57, length: 5.412, lapRecord: '1:29.708 — VER 2023',
+    path: `M 88,92 L 305,85 C 342,84 368,108 368,142 L 365,175
+           C 362,200 348,215 325,218 L 302,220
+           C 280,222 265,238 265,258 L 268,282
+           C 272,302 258,318 238,318 L 188,320
+           C 165,320 148,305 148,282 L 148,265
+           C 148,248 138,235 122,232 L 102,230
+           C 78,228 62,210 65,185 L 68,155
+           C 72,128 90,112 78,98 L 88,92 Z`,
+    startPoint: [88, 92]
+  },
+  monaco: {
+    name: 'Circuit de Monaco', country: '🇲🇨 Monaco · Monte Carlo', mapLabel: 'Monaco',
+    laps: 78, length: 3.337, lapRecord: '1:10.166 — LEC 2021',
+    path: `M 148,44 L 275,42 C 308,42 325,62 322,90 L 318,115
+           C 315,132 302,140 285,138 L 262,136
+           C 245,134 232,144 230,160 L 228,178
+           C 226,195 235,210 250,215 L 278,220
+           C 302,225 318,242 315,265 L 310,282
+           C 304,298 288,308 270,302 L 248,294
+           C 228,286 212,295 205,312 L 200,328
+           C 195,342 182,348 168,340 L 145,328
+           C 120,315 108,292 115,268 L 120,248
+           C 126,228 115,210 98,205 L 80,200
+           C 60,194 48,175 52,155 L 58,132
+           C 64,108 80,95 75,78 L 70,58
+           C 68,44 80,36 92,40 L 148,44 Z`,
+    startPoint: [148, 44]
+  },
+  silverstone: {
+    name: 'Silverstone Circuit', country: '🇬🇧 Great Britain · Northamptonshire', mapLabel: 'Silverstone',
+    laps: 52, length: 5.891, lapRecord: '1:27.097 — HAM 2020',
+    path: `M 68,168 L 68,132 C 68,105 85,88 112,82 L 145,76
+           C 175,70 208,78 232,96 L 252,110
+           C 268,122 285,120 302,108 L 322,94
+           C 345,78 375,78 398,96 L 415,118
+           C 430,140 428,168 410,185 L 388,198
+           C 368,210 358,228 365,248 L 372,268
+           C 378,288 368,308 348,316 L 318,322
+           C 288,328 258,316 242,296 L 228,278
+           C 215,260 195,258 178,270 L 160,282
+           C 140,295 115,295 98,280 L 80,262
+           C 64,245 62,220 68,198 Z`,
+    startPoint: [68, 168]
+  },
+  monza: {
+    name: 'Autodromo Nazionale Monza', country: '🇮🇹 Italy · Monza', mapLabel: 'Monza',
+    laps: 53, length: 5.793, lapRecord: '1:21.046 — RUB 2004',
+    path: `M 108,62 L 342,60 C 375,60 392,78 392,108 L 388,148
+           C 385,168 372,178 355,178 L 328,178
+           C 308,178 295,192 292,210 L 292,235
+           C 292,258 308,272 330,275 L 352,278
+           C 375,281 392,298 388,322 L 355,332
+           L 142,335 C 112,335 95,318 98,292 L 102,268
+           C 106,245 122,232 142,232 L 162,232
+           C 182,232 198,218 198,198 L 195,178
+           C 192,158 178,148 158,150 L 128,152
+           C 105,154 88,138 92,112 C 96,84 108,62 108,62 Z`,
+    startPoint: [108, 62]
+  },
+  singapore: {
+    name: 'Marina Bay Street Circuit', country: '🇸🇬 Singapore · Marina Bay', mapLabel: 'Marina Bay',
+    laps: 62, length: 4.940, lapRecord: '1:35.867 — NOR 2024',
+    path: `M 105,55 L 298,52 C 332,52 350,72 348,102 L 342,132
+           C 338,152 322,165 302,162 L 278,158
+           C 258,154 242,165 238,182 L 235,205
+           C 232,225 242,242 260,248 L 285,255
+           C 308,262 322,280 318,302 L 312,322
+           C 305,340 285,350 265,342 L 238,330
+           C 218,320 198,328 192,348 L 190,362
+           L 152,365 C 128,365 110,348 112,325 L 115,300
+           C 118,278 108,260 90,255 L 72,250
+           C 52,245 40,225 45,202 L 52,178
+           C 58,154 75,142 72,122 L 68,98
+           C 65,72 80,55 105,55 Z`,
+    startPoint: [105, 55]
+  },
+  lasvegas: {
+    name: 'Las Vegas Strip Circuit', country: '🇺🇸 USA · Las Vegas', mapLabel: 'Las Vegas',
+    laps: 50, length: 6.201, lapRecord: '1:35.490 — NOR 2023',
+    // Street circuit — mostly rectangular with chicanes
+    path: `M 82,72 L 362,70 C 392,70 408,88 408,115 L 405,285
+           C 404,312 388,328 362,330 L 82,332
+           C 52,332 38,315 40,288 L 42,115
+           C 42,88 58,72 82,72 Z
+           M 42,165 L 165,165 C 185,165 195,178 192,195
+           L 190,215 C 188,232 198,242 218,242 L 408,242
+           M 82,72 L 82,165
+           M 362,330 L 362,242`,
+    startPoint: [82, 72]
+  },
+  abudhabi: {
+    name: 'Yas Marina Circuit', country: '🇦🇪 Abu Dhabi · Yas Island', mapLabel: 'Yas Marina',
+    laps: 58, length: 5.281, lapRecord: '1:26.103 — VER 2021',
+    path: `M 102,95 L 258,88 C 302,86 328,108 325,142 L 320,172
+           C 315,198 298,212 275,212 L 248,212
+           C 222,212 205,228 205,252 L 208,278
+           C 212,302 228,318 252,320 L 285,322
+           C 315,324 335,342 330,368 L 275,372
+           L 145,372 C 108,372 82,348 82,312 L 82,285
+           C 82,260 95,242 118,238 L 140,236
+           C 162,234 178,218 175,196 L 172,172
+           C 168,148 152,135 128,138 L 105,142
+           C 78,146 60,125 65,98 C 70,75 86,92 102,95 Z`,
+    startPoint: [102, 95]
+  }
+};
+
+const TEAM_COLORS = {
+  'red bull': '#3671C6',
+  'ferrari': '#E8002D',
+  'mercedes': '#27F4D2',
+  'mclaren': '#FF8000',
+  'aston martin': '#358C75',
+  'alpine': '#FF87BC',
+  'williams': '#64C4FF',
+  'rb': '#6692FF',
+  'haas': '#B6BABD',
+  'sauber': '#52E252',
+  'kick': '#52E252',
+  'default': '#666666'
+};
+
+function teamColor(name) {
+  if (!name) return TEAM_COLORS.default;
+  const n = name.toLowerCase();
+  for (const [k, v] of Object.entries(TEAM_COLORS)) {
+    if (k !== 'default' && n.includes(k)) return v;
+  }
+  return TEAM_COLORS.default;
+}
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let state = {
+  drivers: [], constructors: [], schedule: [], nextRace: null,
+  liveSession: null, lbMode: 'standings', selectedDriver: null,
+  currentCircuit: 'australia', livePositions: {}
+};
+let countdownTimer = null;
+let liveTimer = null;
+
+// ═══════════════════════════════════════════════════
+//  CIRCUIT RENDERING
+// ═══════════════════════════════════════════════════
+function renderCircuit(key) {
+  const c = CIRCUITS[key];
+  if (!c) return;
+  state.currentCircuit = key;
+
+  document.getElementById('circuit-label').textContent = c.name;
+  document.getElementById('circuit-country').textContent = c.country;
+  document.getElementById('map-circuit').textContent = c.mapLabel;
+  document.getElementById('ts-laps').textContent = c.laps;
+  document.getElementById('ts-len').textContent = c.length.toFixed(3);
+  document.getElementById('ts-total').textContent = (c.laps * c.length).toFixed(1);
+
+  const svg = document.getElementById('track-svg');
+  const sp = c.startPoint;
+
+  // Build SVG layers
+  svg.innerHTML = `
+    <defs>
+      <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="5" result="blur"/>
+        <feColorMatrix in="blur" type="matrix"
+          values="1 0 0 0 0.88   0 0 0 0 0.02   0 0 0 0 0.02   0 0 0 0.6 0" result="col"/>
+        <feMerge><feMergeNode in="col"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-soft" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="bg-grad" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="#0f0f0f"/>
+        <stop offset="100%" stop-color="#070707"/>
+      </radialGradient>
+      <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="0.7" fill="#1a1a1a"/>
+      </pattern>
+    </defs>
+
+    <!-- Background -->
+    <rect width="500" height="360" fill="url(#bg-grad)"/>
+    <rect width="500" height="360" fill="url(#dots)"/>
+
+    <!-- Track: wide glow -->
+    <path d="${c.path}" fill="none" stroke="#E10600" stroke-width="18"
+          stroke-opacity="0.05" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Track: road surface outer -->
+    <path d="${c.path}" fill="none" stroke="#2a2a2a" stroke-width="13"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Track: road surface inner -->
+    <path d="${c.path}" fill="none" stroke="#1c1c1c" stroke-width="9"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Track: kerb dashes -->
+    <path d="${c.path}" fill="none" stroke="#333" stroke-width="4"
+          stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 9" opacity="0.7"/>
+
+    <!-- Track: edge highlight -->
+    <path d="${c.path}" fill="none" stroke="#3a3a3a" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+
+    <!-- Start/Finish line -->
+    <g transform="translate(${sp[0]}, ${sp[1]})">
+      <line x1="-10" y1="-10" x2="10" y2="10"
+            stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="14" y="5" font-family="Orbitron,sans-serif" font-size="7"
+            fill="#555" letter-spacing="1" font-weight="700">S/F</text>
+    </g>
+
+    <!-- DRS Zones indicator -->
+    <g id="drs-zones" opacity="0.0">
+      <text x="14" y="22" font-family="Orbitron,sans-serif" font-size="7"
+            fill="#00ff00" letter-spacing="1">DRS</text>
+    </g>
+
+    <!-- Driver position dots -->
+    <g id="driver-dots"></g>
+
+    <!-- Lap record -->
+    <text x="8" y="352" font-family="Orbitron,sans-serif" font-size="7"
+          fill="#333" letter-spacing="0.8">LAP REC: ${c.lapRecord}</text>
+  `;
+
+  renderDriverDots();
+}
+
+function renderDriverDots() {
+  const dotGroup = document.getElementById('driver-dots');
+  if (!dotGroup) return;
+  dotGroup.innerHTML = '';
+
+  // Use live positions or demo positions
+  const positions = Object.values(state.livePositions).length > 0
+    ? Object.values(state.livePositions)
+    : getDemoPositions();
+
+  const c = CIRCUITS[state.currentCircuit];
+  const svg = document.getElementById('track-svg');
+  const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  pathEl.setAttribute('d', c.path);
+  svg.appendChild(pathEl);
+  const totalLen = pathEl.getTotalLength();
+  svg.removeChild(pathEl);
+
+  positions.forEach((p, i) => {
+    const pct = p.offset || (i * 0.055);
+    const pt = (() => {
+      const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      tmp.setAttribute('d', c.path);
+      svg.appendChild(tmp);
+      const point = tmp.getPointAtLength(totalLen * pct);
+      svg.removeChild(tmp);
+      return point;
+    })();
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `translate(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`);
+    g.style.cursor = 'pointer';
+    g.setAttribute('data-abbr', p.abbr);
+
+    // Outer glow
+    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    glow.setAttribute('r', '9'); glow.setAttribute('fill', p.color); glow.setAttribute('opacity', '0.18');
+
+    // Dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('r', '5'); dot.setAttribute('fill', p.color);
+    dot.setAttribute('stroke', '#000'); dot.setAttribute('stroke-width', '1');
+
+    // Label background
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '8'); rect.setAttribute('y', '-6');
+    rect.setAttribute('width', p.abbr.length * 5.5 + 4); rect.setAttribute('height', '11');
+    rect.setAttribute('fill', 'rgba(0,0,0,0.8)'); rect.setAttribute('rx', '2');
+
+    // Label text
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', '10'); txt.setAttribute('y', '4');
+    txt.setAttribute('font-family', 'Orbitron,sans-serif');
+    txt.setAttribute('font-size', '6.5'); txt.setAttribute('font-weight', '700');
+    txt.setAttribute('fill', '#ffffff'); txt.textContent = p.abbr;
+
+    g.appendChild(glow); g.appendChild(dot); g.appendChild(rect); g.appendChild(txt);
+    dotGroup.appendChild(g);
+  });
+}
+
+function getDemoPositions() {
+  const drivers = state.drivers.length > 0
+    ? state.drivers.slice(0, 10).map((d, i) => ({
+        abbr: d.abbr, color: teamColor(d.team), offset: 0.02 + i * 0.055
+      }))
+    : [
+        { abbr: 'VER', color: '#3671C6', offset: 0.02 },
+        { abbr: 'NOR', color: '#FF8000', offset: 0.08 },
+        { abbr: 'LEC', color: '#E8002D', offset: 0.14 },
+        { abbr: 'PIA', color: '#FF8000', offset: 0.21 },
+        { abbr: 'SAI', color: '#E8002D', offset: 0.28 },
+        { abbr: 'RUS', color: '#27F4D2', offset: 0.36 },
+        { abbr: 'HAM', color: '#27F4D2', offset: 0.44 },
+        { abbr: 'ALO', color: '#358C75', offset: 0.52 },
+        { abbr: 'STR', color: '#358C75', offset: 0.60 },
+        { abbr: 'GAS', color: '#FF87BC', offset: 0.68 },
+      ];
+  return drivers;
+}
+
+function switchCircuit(key) {
+  renderCircuit(key);
+}
+
+// ═══════════════════════════════════════════════════
+//  API: OpenF1
+// ═══════════════════════════════════════════════════
+async function fetchOpenF1() {
+  try {
+    const res = await fetch('https://api.openf1.org/v1/sessions?session_key=latest');
+    if (!res.ok) throw new Error('no data');
+    const sessions = await res.json();
+    if (!sessions?.length) throw new Error('empty');
+
+    const sess = sessions[0];
+    state.liveSession = sess;
+
+    const sessionLabel = `${sess.meeting_name || 'GRAND PRIX'} — ${sess.session_name || 'SESSION'}`;
+    document.getElementById('session-pill').textContent = sessionLabel;
+    document.getElementById('sb-session-type').textContent = sess.session_name || 'SESSION';
+
+    const now = new Date();
+    const start = new Date(sess.date_start);
+    const end = new Date(sess.date_end);
+    const isLive = now >= start && now <= end;
+
+    const badge = document.getElementById('live-badge');
+    const txt = document.getElementById('live-txt');
+    if (isLive) {
+      badge.classList.remove('offline');
+      txt.textContent = 'LIVE';
+      // Auto-select circuit
+      const loc = (sess.location || '').toLowerCase();
+      for (const [k, c] of Object.entries(CIRCUITS)) {
+        if (c.country.toLowerCase().includes(loc) || c.mapLabel.toLowerCase().includes(loc)) {
+          document.getElementById('circuit-select').value = k;
+          renderCircuit(k);
+          break;
         }
+      }
+      // Start position polling
+      startPositionPolling(sess.session_key);
+    } else {
+      badge.classList.add('offline');
+      txt.textContent = 'ARCHIVED';
+    }
 
-        function displayLeaderboard(data) {
-            const drivers = data.MRData.DriverTable.Drivers;
-            const tbody = document.getElementById('leaderboard-body');
-            tbody.innerHTML = ''; // Clear previous data
+    // Fetch position data for leaderboard
+    await fetchSessionPositions(sess.session_key);
 
-            drivers.forEach((driver, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="driver-pos">${index + 1}</td>
-                    <td class="driver-name">${driver.givenName} ${driver.familyName}</td>
-                    <td class="driver-team">N/A (Team data not in this specific API call)</td>
-                    <td>${driver.nationality}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+  } catch {
+    document.getElementById('session-pill').textContent = 'NO ACTIVE SESSION';
+    document.getElementById('live-badge').classList.add('offline');
+    document.getElementById('live-txt').textContent = 'OFFLINE';
+  }
+}
 
-        // Fetch data when the page loads
-        fetchF1Data();
-    </script>
+async function fetchSessionPositions(sessionKey) {
+  try {
+    const [posRes, driversRes, lapsRes] = await Promise.all([
+      fetch(`https://api.openf1.org/v1/position?session_key=${sessionKey}`),
+      fetch(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
+      fetch(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`)
+    ]);
 
+    const positions = await posRes.json();
+    const drivers = await driversRes.json();
+    const laps = await lapsRes.json();
+
+    if (!positions?.length || !drivers?.length) return;
+
+    // Latest position per driver
+    const latest = {};
+    positions.forEach(p => {
+      if (!latest[p.driver_number] || p.date > latest[p.driver_number].date)
+        latest[p.driver_number] = p;
+    });
+
+    // Latest lap per driver
+    const latestLap = {};
+    laps.forEach(l => {
+      if (!latestLap[l.driver_number] || l.lap_number > (latestLap[l.driver_number].lap_number || 0))
+        latestLap[l.driver_number] = l;
+    });
+
+    // Driver map
+    const dMap = {};
+    drivers.forEach(d => { dMap[d.driver_number] = d; });
+
+    // Build leaderboard
+    const entries = Object.values(latest).sort((a, b) => a.position - b.position).map(e => {
+      const d = dMap[e.driver_number] || {};
+      const lap = latestLap[e.driver_number];
+      return {
+        position: e.position,
+        number: e.driver_number,
+        name: d.full_name || `#${e.driver_number}`,
+        abbr: d.name_acronym || `P${e.driver_number}`,
+        team: d.team_name || '—',
+        teamColor: d.team_colour ? `#${d.team_colour}` : teamColor(d.team_name),
+        gap: e.position === 1 ? 'LEADER' : '—',
+        lastLap: lap?.lap_duration ? formatLapTime(lap.lap_duration) : '—',
+        lapNum: lap?.lap_number || '—'
+      };
+    });
+
+    if (entries.length > 0) {
+      renderLbRows(entries, 'race');
+      document.getElementById('map-lap').textContent = entries[0]?.lapNum || '—';
+    }
+
+    // Live position dots on map
+    state.livePositions = {};
+    entries.forEach((e, i) => {
+      state.livePositions[e.number] = {
+        abbr: e.abbr, color: e.teamColor, offset: 0.02 + i * 0.05
+      };
+    });
+    renderDriverDots();
+
+  } catch { /* Use fallback */ }
+}
+
+async function startPositionPolling(sessionKey) {
+  if (liveTimer) clearInterval(liveTimer);
+  liveTimer = setInterval(() => fetchSessionPositions(sessionKey), 5000);
+}
+
+function formatLapTime(secs) {
+  if (!secs) return '—';
+  const m = Math.floor(secs / 60);
+  const s = (secs % 60).toFixed(3).padStart(6, '0');
+  return `${m}:${s}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  API: Jolpica Ergast
+// ═══════════════════════════════════════════════════
+async function fetchSeasonData() {
+  const BASE = 'https://api.jolpi.ca/ergast/f1';
+  try {
+    const [drRes, csRes, schRes] = await Promise.all([
+      fetch(`${BASE}/current/driverStandings.json`),
+      fetch(`${BASE}/current/constructorStandings.json`),
+      fetch(`${BASE}/current.json`)
+    ]);
+
+    const [drData, csData, schData] = await Promise.all([drRes.json(), csRes.json(), schRes.json()]);
+
+    const dsList = drData?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings || [];
+    state.drivers = dsList.map(d => ({
+      position: +d.position,
+      name: `${d.Driver.givenName} ${d.Driver.familyName}`,
+      abbr: d.Driver.code || d.Driver.familyName.slice(0,3).toUpperCase(),
+      number: d.Driver.permanentNumber || '—',
+      team: d.Constructors?.[0]?.name || '—',
+      points: +d.points, wins: +d.wins,
+      nationality: d.Driver.nationality,
+      dob: d.Driver.dateOfBirth
+    }));
+
+    const csList = csData?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings || [];
+    state.constructors = csList.map(c => ({
+      position: +c.position,
+      name: c.Constructor.name,
+      id: c.Constructor.constructorId,
+      points: +c.points, wins: +c.wins,
+      nationality: c.Constructor.nationality
+    }));
+
+    const races = schData?.MRData?.RaceTable?.Races || [];
+    state.schedule = races.map(r => ({
+      round: +r.round, name: r.raceName,
+      circuit: r.Circuit.circuitName,
+      location: `${r.Circuit.Location.locality}, ${r.Circuit.Location.country}`,
+      date: r.date, time: r.time || '12:00:00Z',
+      season: r.season
+    }));
+
+    const now = new Date();
+    state.nextRace = state.schedule.find(r => new Date(`${r.date}T${r.time}`) > now);
+
+    const season = state.schedule[0]?.season || new Date().getFullYear();
+    document.getElementById('sb-season').textContent = season;
+    document.getElementById('sb-round').textContent =
+      state.nextRace ? `${state.nextRace.round - 1} / ${state.schedule.length}` : state.schedule.length;
+
+    renderAll();
+  } catch {
+    useFallbackData();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════
+function renderAll() {
+  renderTeams();
+  renderDriverStandings();
+  renderConstructorStandings();
+  renderLbFromStandings();
+  renderChampChips();
+  renderSchedule();
+  startCountdown();
+  renderDriverDots(); // update map dots with real data
+}
+
+function renderTeams() {
+  const container = document.getElementById('teams-list');
+  const teamMap = {};
+  state.drivers.forEach(d => {
+    if (!teamMap[d.team]) teamMap[d.team] = [];
+    teamMap[d.team].push(d);
+  });
+
+  container.innerHTML = state.constructors.map(con => {
+    const color = teamColor(con.name);
+    const drivers = teamMap[con.name] || [];
+    return `
+      <div class="team-block">
+        <div class="team-hdr" onclick="toggleTeam(this)">
+          <div class="team-stripe" style="background:${color}"></div>
+          <div class="team-hdr-info">
+            <div class="team-hdr-name">${con.name}</div>
+            <div class="team-hdr-pos">P${con.position} · ${con.wins}W</div>
+          </div>
+          <div class="team-hdr-pts">${con.points}</div>
+          <div class="team-expand-icon">▼</div>
+        </div>
+        <div class="team-drivers-list">
+          ${drivers.map(d => `
+            <div class="driver-item" onclick="selectDriver('${d.abbr}')" id="di-${d.abbr}">
+              <div class="di-num" style="color:${color}">${d.number}</div>
+              <div class="di-name">${d.name}</div>
+              <div class="di-pts">${d.points}p</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleTeam(el) {
+  const block = el.closest('.team-block');
+  block.classList.toggle('open');
+}
+
+function selectDriver(abbr) {
+  const d = state.drivers.find(x => x.abbr === abbr);
+  if (!d) return;
+  state.selectedDriver = abbr;
+
+  // Update UI selection
+  document.querySelectorAll('.driver-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(`di-${abbr}`);
+  if (el) el.classList.add('active');
+
+  const color = teamColor(d.team);
+  const strip = document.getElementById('driver-strip');
+  strip.style.setProperty('--driver-color', color);
+  strip.classList.add('visible');
+
+  document.getElementById('dds-name').textContent = d.name.toUpperCase();
+  document.getElementById('dds-meta').innerHTML =
+    `<span style="color:${color}">▐</span> ${d.team} &nbsp;·&nbsp; #${d.number} &nbsp;·&nbsp; ${d.nationality}`;
+
+  const age = d.dob ? Math.floor((Date.now() - new Date(d.dob)) / (365.25 * 86400000)) : '—';
+  document.getElementById('dds-grid').innerHTML = `
+    <div class="dds-stat"><div class="dds-stat-label">Standing</div><div class="dds-stat-val" style="color:${color}">P${d.position}</div></div>
+    <div class="dds-stat"><div class="dds-stat-label">Points</div><div class="dds-stat-val">${d.points}</div></div>
+    <div class="dds-stat"><div class="dds-stat-label">Wins</div><div class="dds-stat-val">${d.wins}</div></div>
+    <div class="dds-stat"><div class="dds-stat-label">Age</div><div class="dds-stat-val">${age}</div></div>
+  `;
+
+  // Highlight leaderboard row
+  document.querySelectorAll('.lb-row').forEach(r => {
+    r.classList.toggle('highlighted', r.dataset.abbr === abbr);
+  });
+}
+
+function closeDriverStrip() {
+  document.getElementById('driver-strip').classList.remove('visible');
+  document.querySelectorAll('.driver-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.lb-row').forEach(r => r.classList.remove('highlighted'));
+  state.selectedDriver = null;
+}
+
+function renderDriverStandings() {
+  const c = document.getElementById('driver-standings');
+  c.innerHTML = state.drivers.map(d => {
+    const col = teamColor(d.team);
+    return `
+      <div class="st-row" onclick="selectDriver('${d.abbr}'); showTab('teams')">
+        <div class="st-pos">${d.position}</div>
+        <div class="st-bar" style="background:${col}"></div>
+        <div class="st-name">${d.name}</div>
+        <div class="st-pts">${d.points}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderConstructorStandings() {
+  const c = document.getElementById('constructor-standings');
+  c.innerHTML = state.constructors.map(con => {
+    const col = teamColor(con.name);
+    return `
+      <div class="st-row">
+        <div class="st-pos">${con.position}</div>
+        <div class="st-bar" style="background:${col}"></div>
+        <div class="st-name">${con.name}</div>
+        <div class="st-pts">${con.points}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderLbRows(entries, mode) {
+  const lb = document.getElementById('lb-list');
+  lb.innerHTML = entries.map((e, i) => {
+    const col = e.teamColor || teamColor(e.team);
+    const posClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const abbr = e.abbr || e.name?.split(' ').slice(-1)[0].slice(0,3).toUpperCase();
+    return `
+      <div class="lb-row" data-abbr="${abbr}" onclick="selectDriver('${abbr}')">
+        <div class="lb-pos ${posClass}">${e.position || i+1}</div>
+        <div class="lb-num" style="color:${col}">${e.number || ''}</div>
+        <div class="lb-info">
+          <div class="lb-driver">
+            <span class="lb-team-dot" style="background:${col}"></span>
+            ${abbr}
+          </div>
+          <div class="lb-team">${e.team}</div>
+        </div>
+        <div class="lb-time-col">
+          <div class="lb-gap ${i===0?'leader':''}">${e.gap || (i===0 ? 'LEADER' : '—')}</div>
+          <div class="lb-sub">${e.lastLap || (e.wins !== undefined ? `${e.wins}W` : '—')}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderLbFromStandings() {
+  const entries = state.drivers.map((d, i) => ({
+    position: d.position,
+    number: d.number,
+    name: d.name,
+    abbr: d.abbr,
+    team: d.team,
+    teamColor: teamColor(d.team),
+    gap: i === 0 ? 'LEADER' : `−${(state.drivers[0].points - d.points)} pts`,
+    wins: d.wins
+  }));
+  renderLbRows(entries, 'standings');
+}
+
+function renderChampChips() {
+  const c = document.getElementById('champ-chips');
+  c.innerHTML = state.drivers.slice(0, 12).map(d => {
+    const col = teamColor(d.team);
+    return `
+      <div class="cf-chip" onclick="selectDriver('${d.abbr}')">
+        <div class="cf-p" style="color:${col}">P${d.position}</div>
+        <div class="cf-name">${d.abbr}</div>
+        <div class="cf-pts">${d.points}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderSchedule() {
+  const now = new Date();
+  const el = document.getElementById('schedule-list');
+  if (!state.schedule.length) {
+    el.innerHTML = '<div style="padding:14px;font-size:12px;color:#555">No schedule data</div>';
+    return;
+  }
+  el.innerHTML = state.schedule.map(r => {
+    const d = new Date(r.date);
+    const isPast = d < now;
+    const isNext = state.nextRace && r.round === state.nextRace.round;
+    return `
+      <div class="schedule-item ${isPast ? 'past' : ''} ${isNext ? 'next' : ''}">
+        <div class="sch-round" style="${isNext ? 'color:#E10600' : ''}">${r.round}</div>
+        <div class="sch-info">
+          <div class="sch-name">${r.name.replace(' Grand Prix',' GP')}</div>
+          <div class="sch-loc">${r.location}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+          <div class="sch-date">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+          ${isNext ? '<div class="sch-next-tag">NEXT</div>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  COUNTDOWN
+// ═══════════════════════════════════════════════════
+function startCountdown() {
+  if (!state.nextRace) {
+    document.getElementById('cd-block').style.display = 'none';
+    return;
+  }
+  document.getElementById('cd-race').textContent =
+    state.nextRace.name.replace(' Grand Prix',' GP').toUpperCase();
+
+  if (countdownTimer) clearInterval(countdownTimer);
+  const tick = () => {
+    const diff = new Date(`${state.nextRace.date}T${state.nextRace.time}`) - new Date();
+    if (diff <= 0) {
+      ['d','h','m','s'].forEach(u => document.getElementById(`cd-${u}`).textContent = '00');
+      clearInterval(countdownTimer);
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+  };
+  tick();
+  countdownTimer = setInterval(tick, 1000);
+}
+
+// ═══════════════════════════════════════════════════
+//  LEADERBOARD MODE
+// ═══════════════════════════════════════════════════
+function setLbMode(mode) {
+  state.lbMode = mode;
+  document.getElementById('tog-standings').classList.toggle('on', mode === 'standings');
+  document.getElementById('tog-race').classList.toggle('on', mode === 'race');
+  if (mode === 'standings') renderLbFromStandings();
+  else {
+    // Show live race data or standings with race format
+    if (Object.keys(state.livePositions).length > 0) {
+      renderLbRows(Object.values(state.livePositions).map((p,i) => ({
+        position: i+1, number: '—', name: p.abbr, abbr: p.abbr, team: '—',
+        teamColor: p.color, gap: i===0?'LEADER':'—', lastLap:'—'
+      })), 'race');
+    } else {
+      renderLbFromStandings();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════
+function showTab(tab) {
+  document.querySelectorAll('.s-tab').forEach((b, i) => {
+    b.classList.toggle('active', ['teams','drivers','schedule'][i] === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+//  FALLBACK DATA (2024 season final standings)
+// ═══════════════════════════════════════════════════
+function useFallbackData() {
+  state.drivers = [
+    {position:1,name:'Max Verstappen',abbr:'VER',number:'1',team:'Red Bull Racing',points:437,wins:9,nationality:'Dutch',dob:'1997-09-30'},
+    {position:2,name:'Lando Norris',abbr:'NOR',number:'4',team:'McLaren',points:374,wins:3,nationality:'British',dob:'1999-11-13'},
+    {position:3,name:'Charles Leclerc',abbr:'LEC',number:'16',team:'Ferrari',points:356,wins:3,nationality:'Monégasque',dob:'1997-10-16'},
+    {position:4,name:'Oscar Piastri',abbr:'PIA',number:'81',team:'McLaren',points:292,wins:2,nationality:'Australian',dob:'2001-04-06'},
+    {position:5,name:'Carlos Sainz',abbr:'SAI',number:'55',team:'Ferrari',points:290,wins:2,nationality:'Spanish',dob:'1994-09-01'},
+    {position:6,name:'George Russell',abbr:'RUS',number:'63',team:'Mercedes',points:245,wins:1,nationality:'British',dob:'1998-02-15'},
+    {position:7,name:'Lewis Hamilton',abbr:'HAM',number:'44',team:'Mercedes',points:223,wins:1,nationality:'British',dob:'1985-01-07'},
+    {position:8,name:'Sergio Perez',abbr:'PER',number:'11',team:'Red Bull Racing',points:152,wins:0,nationality:'Mexican',dob:'1990-01-26'},
+    {position:9,name:'Fernando Alonso',abbr:'ALO',number:'14',team:'Aston Martin',points:70,wins:0,nationality:'Spanish',dob:'1981-07-29'},
+    {position:10,name:'Lance Stroll',abbr:'STR',number:'18',team:'Aston Martin',points:24,wins:0,nationality:'Canadian',dob:'1998-10-29'},
+    {position:11,name:'Yuki Tsunoda',abbr:'TSU',number:'22',team:'RB F1 Team',points:22,wins:0,nationality:'Japanese',dob:'2000-05-11'},
+    {position:12,name:'Nico Hulkenberg',abbr:'HUL',number:'27',team:'Haas F1 Team',points:31,wins:0,nationality:'German',dob:'1987-08-19'},
+    {position:13,name:'Oliver Bearman',abbr:'BEA',number:'87',team:'Haas F1 Team',points:7,wins:0,nationality:'British',dob:'2005-05-08'},
+    {position:14,name:'Esteban Ocon',abbr:'OCO',number:'31',team:'Alpine F1 Team',points:23,wins:0,nationality:'French',dob:'1996-09-17'},
+    {position:15,name:'Pierre Gasly',abbr:'GAS',number:'10',team:'Alpine F1 Team',points:42,wins:0,nationality:'French',dob:'1996-02-07'},
+    {position:16,name:'Alexander Albon',abbr:'ALB',number:'23',team:'Williams',points:12,wins:0,nationality:'Thai',dob:'1996-03-23'},
+    {position:17,name:'Franco Colapinto',abbr:'COL',number:'43',team:'Williams',points:5,wins:0,nationality:'Argentine',dob:'2003-05-27'},
+    {position:18,name:'Daniel Ricciardo',abbr:'RIC',number:'3',team:'RB F1 Team',points:12,wins:0,nationality:'Australian',dob:'1989-07-01'},
+    {position:19,name:'Valtteri Bottas',abbr:'BOT',number:'77',team:'Kick Sauber',points:4,wins:0,nationality:'Finnish',dob:'1989-08-28'},
+    {position:20,name:'Zhou Guanyu',abbr:'ZHO',number:'24',team:'Kick Sauber',points:0,wins:0,nationality:'Chinese',dob:'1999-05-30'},
+  ];
+  state.constructors = [
+    {position:1,name:'McLaren',id:'mclaren',points:666,wins:6,nationality:'British'},
+    {position:2,name:'Ferrari',id:'ferrari',points:652,wins:5,nationality:'Italian'},
+    {position:3,name:'Red Bull Racing',id:'red_bull',points:589,wins:9,nationality:'Austrian'},
+    {position:4,name:'Mercedes',id:'mercedes',points:468,wins:2,nationality:'German'},
+    {position:5,name:'Aston Martin',id:'aston_martin',points:94,wins:0,nationality:'British'},
+    {position:6,name:'Haas F1 Team',id:'haas',points:58,wins:0,nationality:'American'},
+    {position:7,name:'Alpine F1 Team',id:'alpine',points:65,wins:0,nationality:'French'},
+    {position:8,name:'RB F1 Team',id:'rb',points:46,wins:0,nationality:'Italian'},
+    {position:9,name:'Williams',id:'williams',points:17,wins:0,nationality:'British'},
+    {position:10,name:'Kick Sauber',id:'kick_sauber',points:4,wins:0,nationality:'Swiss'},
+  ];
+  document.getElementById('sb-season').textContent = '2024';
+  document.getElementById('sb-round').textContent = '24 / 24';
+  document.getElementById('session-pill').textContent = '2024 SEASON — FINAL';
+  document.getElementById('sb-session-type').textContent = 'FALLBACK DATA';
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════
+//  CLOCK & STATUS BAR
+// ═══════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('nav-date').textContent =
+    now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('sb-time').textContent =
+    now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+async function init() {
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Render default circuit immediately
+  renderCircuit('australia');
+
+  // Fetch data
+  const results = await Promise.allSettled([
+    fetchOpenF1(),
+    fetchSeasonData()
+  ]);
+
+  // If season data failed and no data, use fallback
+  if (!state.drivers.length) useFallbackData();
+
+  // Refresh every 30s
+  setInterval(() => {
+    Promise.allSettled([fetchOpenF1(), fetchSeasonData()]);
+  }, 30000);
+}
+
+init();
+</script>
 </body>
 </html>
